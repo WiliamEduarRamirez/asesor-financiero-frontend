@@ -6,11 +6,11 @@ export function usePrepayments() {
   const prepaymentStrategy = ref<PrepaymentStrategy>('reduce_term');
 
   const addPrepayment = () => {
-    prepayments.value.push({
-      month: 1,
-      amount: 1000,
-      frequency: 'unique',
-    });
+    prepayments.value.push({ month: 1, amount: 0, frequency: 'unique' });
+  };
+
+  const addRecurringPrepayment = (prep: Prepayment) => {
+    prepayments.value.push(prep);
   };
 
   const removePrepayment = (index: number) => {
@@ -21,6 +21,7 @@ export function usePrepayments() {
     prepayments,
     prepaymentStrategy,
     addPrepayment,
+    addRecurringPrepayment,
     removePrepayment,
   };
 }
