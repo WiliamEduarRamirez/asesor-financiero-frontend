@@ -5,6 +5,7 @@ import { Doughnut } from 'vue-chartjs';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { computed } from 'vue';
 import AmortizationTable from './components/AmortizationTable.vue';
+import { useMortgageCalculator } from './composables/useMortgageCalculator';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -16,13 +17,21 @@ const {
   termYears,
   monthlySalary,
   loanAmount,
-  monthlyPayment,
-  totalInterest,
-  salaryPercentage,
-  isRisky,
   desgravamenRate,
   fireInsuranceRate,
 } = storeToRefs(store);
+
+// Logic moved to composable
+const { monthlyPayment, totalInterest, salaryPercentage, isRisky, amortizationSchedule } =
+  useMortgageCalculator({
+    price,
+    downPayment,
+    annualRate,
+    termYears,
+    monthlySalary,
+    desgravamenRate,
+    fireInsuranceRate,
+  });
 
 const chartData = computed(() => ({
   labels: ['Principal', 'Interés Total'],
@@ -296,6 +305,6 @@ const formatCurrency = (value: number) => {
     </div>
 
     <!-- Amortization Table -->
-    <AmortizationTable />
+    <AmortizationTable :schedule="amortizationSchedule" />
   </div>
 </template>

@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { useMortgageStore } from '../stores/useMortgageStore';
-import { storeToRefs } from 'pinia';
+import { type PropType } from 'vue';
+import type { AmortizationRow } from '../models/mortgage.model';
 
-const store = useMortgageStore();
-const { amortizationSchedule } = storeToRefs(store);
+defineProps({
+  schedule: {
+    type: Array as PropType<AmortizationRow[]>,
+    default: () => [],
+  },
+});
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('es-PE', {
@@ -35,7 +39,7 @@ const formatCurrency = (value: number) => {
           </thead>
           <tbody class="divide-y divide-slate-100">
             <tr
-              v-for="row in amortizationSchedule"
+              v-for="row in schedule"
               :key="row.month"
               class="hover:bg-slate-50 transition-colors"
             >
