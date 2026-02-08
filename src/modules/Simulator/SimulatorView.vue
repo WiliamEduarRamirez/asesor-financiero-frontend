@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia';
 import { Doughnut } from 'vue-chartjs';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { computed } from 'vue';
+import AmortizationTable from './components/AmortizationTable.vue';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -19,6 +20,8 @@ const {
   totalInterest,
   salaryPercentage,
   isRisky,
+  desgravamenRate,
+  fireInsuranceRate,
 } = storeToRefs(store);
 
 const chartData = computed(() => ({
@@ -78,12 +81,13 @@ const formatCurrency = (value: number) => {
           <div class="space-y-5">
             <!-- Property Price -->
             <div>
-              <label class="block text-sm font-medium text-slate-600 mb-1"
+              <label for="price" class="block text-sm font-medium text-slate-600 mb-1"
                 >Precio del Inmueble (S/)</label
               >
               <div class="relative">
                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">S/</span>
                 <input
+                  id="price"
                   v-model.number="price"
                   type="number"
                   class="w-full pl-8 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none font-semibold text-slate-800"
@@ -94,12 +98,13 @@ const formatCurrency = (value: number) => {
 
             <!-- Down Payment -->
             <div>
-              <label class="block text-sm font-medium text-slate-600 mb-1"
+              <label for="downPayment" class="block text-sm font-medium text-slate-600 mb-1"
                 >Cuota Inicial (S/)</label
               >
               <div class="relative">
                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">S/</span>
                 <input
+                  id="downPayment"
                   v-model.number="downPayment"
                   type="number"
                   class="w-full pl-8 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none font-semibold text-slate-800"
@@ -113,9 +118,12 @@ const formatCurrency = (value: number) => {
             <!-- Interest Rate & Term -->
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-slate-600 mb-1">TEA (%)</label>
+                <label for="annualRate" class="block text-sm font-medium text-slate-600 mb-1"
+                  >TEA (%)</label
+                >
                 <div class="relative">
                   <input
+                    id="annualRate"
                     v-model.number="annualRate"
                     type="number"
                     step="0.1"
@@ -125,8 +133,11 @@ const formatCurrency = (value: number) => {
                 </div>
               </div>
               <div>
-                <label class="block text-sm font-medium text-slate-600 mb-1">Plazo (Años)</label>
+                <label for="termYears" class="block text-sm font-medium text-slate-600 mb-1"
+                  >Plazo (Años)</label
+                >
                 <input
+                  id="termYears"
                   v-model.number="termYears"
                   type="number"
                   class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none font-semibold text-slate-800"
@@ -134,14 +145,53 @@ const formatCurrency = (value: number) => {
               </div>
             </div>
 
+            <!-- Insurances -->
+            <div class="grid grid-cols-2 gap-4 pt-2">
+              <div>
+                <label for="desgravamenRate" class="block text-xs font-medium text-slate-500 mb-1"
+                  >Seg. Desgravamen (Mensual %)</label
+                >
+                <div class="relative">
+                  <input
+                    id="desgravamenRate"
+                    v-model.number="desgravamenRate"
+                    type="number"
+                    step="0.001"
+                    class="w-full pl-3 pr-6 py-1.5 text-sm border border-slate-200 rounded bg-slate-50 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-slate-700"
+                  />
+                  <span class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400"
+                    >%</span
+                  >
+                </div>
+              </div>
+              <div>
+                <label for="fireInsuranceRate" class="block text-xs font-medium text-slate-500 mb-1"
+                  >Seg. Inmueble (Mensual %)</label
+                >
+                <div class="relative">
+                  <input
+                    id="fireInsuranceRate"
+                    v-model.number="fireInsuranceRate"
+                    type="number"
+                    step="0.001"
+                    class="w-full pl-3 pr-6 py-1.5 text-sm border border-slate-200 rounded bg-slate-50 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-slate-700"
+                  />
+                  <span class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400"
+                    >%</span
+                  >
+                </div>
+              </div>
+            </div>
+
             <!-- Salary for KPI -->
             <div class="pt-4 border-t border-slate-100">
-              <label class="block text-sm font-medium text-slate-600 mb-1"
+              <label for="monthlySalary" class="block text-sm font-medium text-slate-600 mb-1"
                 >Ingreso Mensual Neto (S/)</label
               >
               <div class="relative">
                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">S/</span>
                 <input
+                  id="monthlySalary"
                   v-model.number="monthlySalary"
                   type="number"
                   class="w-full pl-8 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all outline-none font-semibold text-slate-800"
@@ -244,5 +294,8 @@ const formatCurrency = (value: number) => {
         </div>
       </div>
     </div>
+
+    <!-- Amortization Table -->
+    <AmortizationTable />
   </div>
 </template>
