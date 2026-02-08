@@ -6,6 +6,8 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { computed } from 'vue';
 import AmortizationTable from './components/AmortizationTable.vue';
 import { useMortgageCalculator } from './composables/useMortgageCalculator';
+import { usePrepayments } from './composables/usePrepayments';
+import PrepaymentStrategy from './components/PrepaymentStrategy.vue';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -21,17 +23,29 @@ const {
   fireInsuranceRate,
 } = storeToRefs(store);
 
+const { prepayments, prepaymentStrategy, addPrepayment, removePrepayment } = usePrepayments();
+
 // Logic moved to composable
-const { monthlyPayment, totalInterest, salaryPercentage, isRisky, amortizationSchedule } =
-  useMortgageCalculator({
-    price,
-    downPayment,
-    annualRate,
-    termYears,
-    monthlySalary,
-    desgravamenRate,
-    fireInsuranceRate,
-  });
+const {
+  monthlyPayment,
+  totalInterest,
+  salaryPercentage,
+  minSalaryPercentage,
+  isRisky,
+  amortizationSchedule,
+  totalInterestSavings,
+  monthsSaved,
+} = useMortgageCalculator({
+  price,
+  downPayment,
+  annualRate,
+  termYears,
+  monthlySalary,
+  desgravamenRate,
+  fireInsuranceRate,
+  prepayments,
+  prepaymentStrategy,
+});
 
 const chartData = computed(() => ({
   labels: ['Principal', 'Interés Total'],
@@ -155,7 +169,7 @@ const formatCurrency = (value: number) => {
             </div>
 
             <!-- Insurances -->
-            <div class="grid grid-cols-2 gap-4 pt-2">
+            <div class="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100 mt-4">
               <div>
                 <label for="desgravamenRate" class="block text-xs font-medium text-slate-500 mb-1"
                   >Seg. Desgravamen (Mensual %)</label
@@ -209,6 +223,18 @@ const formatCurrency = (value: number) => {
             </div>
           </div>
         </div>
+
+        <!-- Prepayment Strategy Component -->
+        <PrepaymentStrategy
+          v-model:prepayments="prepayments"
+          v-model:prepaymentStrategy="prepaymentStrategy"
+          :total-interest-savings="totalInterestSavings"
+          :months-saved="monthsSaved"
+          :salary-percentage="salaryPercentage"
+          :min-salary-percentage="minSalaryPercentage"
+          @add-prepayment="addPrepayment"
+          @remove-prepayment="removePrepayment"
+        />
       </div>
 
       <!-- Right Column: KPIs & Charts -->

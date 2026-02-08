@@ -6,7 +6,7 @@ export const useMortgageStore = defineStore('mortgage', {
     downPayment: 60000, // Default 20%
     annualRate: 8.5, // TEA
     termYears: 20,
-    monthlySalary: 6500,
+    monthlySalary: 6550,
     desgravamenRate: 0.049, // Monthly %
     fireInsuranceRate: 0.029, // Monthly %
   }),

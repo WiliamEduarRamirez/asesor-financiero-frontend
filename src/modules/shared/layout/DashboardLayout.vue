@@ -17,7 +17,7 @@ import { RouterLink, RouterView } from 'vue-router';
         <RouterLink
           to="/"
           class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-all group"
-          active-class="bg-blue-600 text-white shadow-lg shadow-blue-900/50"
+          exact-active-class="bg-blue-600 text-white shadow-lg shadow-blue-900/50"
         >
           <iconify-icon
             icon="mdi:calculator-variant"
@@ -61,7 +61,7 @@ import { RouterLink, RouterView } from 'vue-router';
       <div class="p-4 border-t border-slate-800 bg-slate-900/50">
         <div class="flex items-center gap-3">
           <div
-            class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md ring-2 ring-slate-800"
+            class="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md ring-2 ring-slate-800"
           >
             WR
           </div>
