@@ -1,4 +1,4 @@
-import { computed, type Ref, unref } from 'vue';
+import { computed, type Ref, ref } from 'vue';
 
 import type {
   AmortizationRow,
@@ -6,6 +6,8 @@ import type {
   PrepaymentStrategy,
   StrategyComparison,
 } from '../models/mortgage.model';
+
+import { MortgageEngine, type MortgageEngineConfig } from '../utils/MortgageEngine';
 
 interface MortgageCalculatorParams {
   price: Ref<number>;
@@ -17,6 +19,7 @@ interface MortgageCalculatorParams {
   fireInsuranceRate: Ref<number>; // Monthly %
   prepayments?: Ref<Prepayment[]>;
   prepaymentStrategy?: Ref<PrepaymentStrategy>;
+  startDate?: Date;
 }
 
 export function useMortgageCalculator({
@@ -32,6 +35,8 @@ export function useMortgageCalculator({
 }: MortgageCalculatorParams) {
   // Getters / Computed
   const loanAmount = computed(() => price.value - downPayment.value);
+  const enableIntelligentStrategy = ref(false);
+  const aggressiveContinuity = ref(false);
 
   // Financial Calculations
   const monthlyRate = computed(() => {
@@ -40,124 +45,85 @@ export function useMortgageCalculator({
     return Math.pow(1 + annualRate.value / 100, 1 / 12) - 1;
   });
 
-  // Base calculation function
-  const calculatePMT = (principal: number, rate: number, months: number) => {
-    if (months <= 0 || principal <= 0) return 0;
-    if (rate === 0) return principal / months;
-    const numerator = rate * Math.pow(1 + rate, months);
-    const denominator = Math.pow(1 + rate, months) - 1;
-    return principal * (numerator / denominator);
-  };
+  // 1. & 2. Engine Integration
+  const engineResult = computed(() => {
+    const config: MortgageEngineConfig = {
+      price: price.value,
+      downPayment: downPayment.value,
+      annualRate: annualRate.value,
+      termYears: termYears.value,
+      desgravamenRate: desgravamenRate.value,
+      fireInsuranceRate: fireInsuranceRate.value,
+      prepayments: prepayments?.value || [],
+      strategy: prepaymentStrategy?.value || 'reduce_term',
+      startDate: new Date(), // Could be parameterized
+      intelligentStrategy: enableIntelligentStrategy.value,
+      aggressiveContinuity: aggressiveContinuity.value,
+      monthlySalary: monthlySalary.value,
+    };
 
-  const initialFinancialMonthlyPayment = computed(() => {
-    return calculatePMT(loanAmount.value, monthlyRate.value, termYears.value * 12);
+    const engine = new MortgageEngine(config);
+    return engine.calculate();
   });
 
-  // Helper to calculate applicable extra payment for a given month
-  const calculateExtraPayment = (prepayments: Prepayment[], currentMonth: number): number => {
-    let totalExtra = 0;
-    prepayments.forEach((p) => {
-      let isApplicable = false;
-      if (p.frequency === 'unique') {
-        isApplicable = p.month === currentMonth;
-      } else if (p.frequency === 'recurring') {
-        const interval = p.interval ?? 12;
-        isApplicable = currentMonth >= p.month && (currentMonth - p.month) % interval === 0;
-      }
+  const amortizationSchedule = computed<AmortizationRow[]>(() => {
+    return engineResult.value.schedule.map((row) => ({
+      ...row,
+      capital: row.totalAmortization,
+      balance: row.balanceEnd,
+    }));
+  });
 
-      if (isApplicable) {
-        totalExtra += p.amount;
-      }
-    });
-    return totalExtra;
-  };
+  const baselineSchedule = computed(() => {
+    // We can't easily get baseline schedule from here without running engine again or exposing it.
+    // In MortgageEngine, we run baseline internally.
+    // Maybe we should expose baseline result in EngineResult?
+    // Yes, let's update EngineResult if needed, or run a separate baseline instance.
+    // Running a separate instance is cleaner for now to avoid changing Engine interface too much if not planned.
+    // BUT, the engine does run baseline internally to calculate savings.
+    // Let's rely on `strategyImpact` for savings data, but if UI needs the full baseline schedule (e.g. for charts), we might need it.
+    // For now, let's just run a second engine for baseline if needed, strictly.
+    const config: MortgageEngineConfig = {
+      price: price.value,
+      downPayment: downPayment.value,
+      annualRate: annualRate.value,
+      termYears: termYears.value,
+      desgravamenRate: desgravamenRate.value,
+      fireInsuranceRate: fireInsuranceRate.value,
+      prepayments: [],
+      strategy: 'reduce_term',
+      startDate: new Date(),
+    };
+    return new MortgageEngine(config).calculate().schedule.map((row) => ({
+      ...row,
+      capital: row.totalAmortization,
+      balance: row.balanceEnd,
+    }));
+  });
 
-  // Helper to standard financial formula
-  const generateSchedule = (
-    currentPrepayments: Prepayment[],
-    currentStrategy: PrepaymentStrategy,
-  ): AmortizationRow[] => {
-    const schedule: AmortizationRow[] = [];
-    let balance = loanAmount.value;
-    const rate = monthlyRate.value;
-    let currentFinancialPayment = initialFinancialMonthlyPayment.value;
+  const globalStrategySummary = computed(() => {
+    const res = engineResult.value;
+    const hasStrategy = (prepayments?.value && prepayments.value.length > 0) || false;
 
-    const totalMonths = termYears.value * 12;
-
-    // Fixed Fire Insurance (based on Property Value)
-    const fireInsurance = price.value * (fireInsuranceRate.value / 100);
-    const desgravamenRateVal = desgravamenRate.value || 0;
-
-    for (let i = 1; i <= totalMonths; i++) {
-      if (balance <= 0.01) break; // Loan paid off
-
-      const interest = balance * rate;
-      let capital = currentFinancialPayment - interest;
-
-      // Ensure capital doesn't exceed balance for the last payment
-      if (capital > balance) {
-        capital = balance;
-        currentFinancialPayment = interest + capital;
-      }
-
-      // Desgravamen (based on reduced Balance)
-      const desgravamen = balance * (desgravamenRateVal / 100);
-
-      const extraCapital = calculateExtraPayment(currentPrepayments, i);
-
-      let nextBalance = balance - capital;
-
-      // Apply extra capital
-      if (extraCapital > 0) {
-        nextBalance -= extraCapital;
-        capital += extraCapital; // For display
-
-        // STRATEGY RECALCULATION
-        if (currentStrategy === 'reduce_payment' && nextBalance > 0) {
-          const remainingMonths = totalMonths - i;
-          if (remainingMonths > 0) {
-            currentFinancialPayment = calculatePMT(nextBalance, rate, remainingMonths);
-          } else {
-            currentFinancialPayment = 0;
-          }
-        }
-      }
-
-      // ITF Calculation (0.005% of Total Quota + Anticipated Payment)
-      // Total Quota = Principal + Interest + Desgravamen + Fire Insurance
-      // Base for ITF = Total Quota + Extra Capital
-      const baseForITF = currentFinancialPayment + desgravamen + fireInsurance + extraCapital;
-      const itf = baseForITF * 0.00005;
-
-      const rowPayment = baseForITF + itf;
-
-      balance = nextBalance;
-      if (balance < 0) balance = 0;
-
-      schedule.push({
-        month: i,
-        payment: rowPayment,
-        financialPayment: currentFinancialPayment,
-        interest: interest,
-        capital: capital,
-        desgravamen: desgravamen,
-        fireInsurance: fireInsurance,
-        itf: itf,
-        balance: balance,
-      });
-    }
-    return schedule;
-  };
-
-  // 1. Baseline Schedule (No prepayments)
-  const baselineSchedule = computed(() => generateSchedule([], 'reduce_term'));
-
-  // 2. Actual Schedule (With prepayments)
-  const amortizationSchedule = computed(() => {
-    return generateSchedule(
-      prepayments ? unref(prepayments) : [],
-      prepaymentStrategy ? unref(prepaymentStrategy) : 'reduce_term',
-    );
+    return {
+      hasStrategy,
+      totalCapitalInjected: res.totals.totalExtra,
+      totalITF: res.totals.totalITF,
+      totalInvestment: res.totals.totalExtra + res.totals.totalExtra * 0.00005, // Approximate ITF on extra
+      operationsCount: res.schedule.filter((r) => r.hasPrepayment).length,
+      originalInterest: res.strategyImpact.originalInterest,
+      strategyInterest: res.totals.totalInterest,
+      totalSavings: res.strategyImpact.savedInterest,
+      newEndDate: res.strategyImpact.savedMonths
+        ? termYears.value * 12 - res.strategyImpact.savedMonths
+        : null,
+      // Wait, UI expects a number "Month X".
+      // The engine returns a Date for newEndDate.
+      // We need to convert it to "Month Index" relative to start?
+      // Let's use `savedMonths` from impact.
+      // `originalTermMonths` = termYears * 12.
+      // `newTermMonths` = originalTermMonths - savedMonths.
+    };
   });
 
   // KPIs
@@ -207,17 +173,8 @@ export function useMortgageCalculator({
     return amortizationSchedule.value.reduce((acc, curr) => acc + curr.interest, 0);
   });
 
-  const baselineTotalInterest = computed(() => {
-    return baselineSchedule.value.reduce((acc, curr) => acc + curr.interest, 0);
-  });
-
-  const totalInterestSavings = computed(() => {
-    return Math.max(0, baselineTotalInterest.value - totalInterest.value);
-  });
-
-  const monthsSaved = computed(() => {
-    return Math.max(0, baselineSchedule.value.length - amortizationSchedule.value.length);
-  });
+  const totalInterestSavings = computed(() => engineResult.value.strategyImpact.savedInterest);
+  const monthsSaved = computed(() => engineResult.value.strategyImpact.savedMonths);
 
   const salaryPercentage = computed(() => {
     if (monthlySalary.value === 0) return 0;
@@ -293,33 +250,54 @@ export function useMortgageCalculator({
     const scenarioPrepayments = currentList.filter((p) => p.month !== month);
     scenarioPrepayments.push({ month, amount: extraAmount, frequency: 'unique' });
 
-    // Scenario A: Reduce Term
-    const scheduleA = generateSchedule(scenarioPrepayments, 'reduce_term');
-    const interestA = scheduleA.reduce((sum, item) => sum + item.interest, 0);
-    const savingsA = Math.max(0, baselineTotalInterest.value - interestA);
+    // Base Scenario A: reduce_term
+    const configA: MortgageEngineConfig = {
+      price: price.value,
+      downPayment: downPayment.value,
+      annualRate: annualRate.value,
+      termYears: termYears.value,
+      desgravamenRate: desgravamenRate.value,
+      fireInsuranceRate: fireInsuranceRate.value,
+      prepayments: scenarioPrepayments,
+      strategy: 'reduce_term',
+      startDate: new Date(),
+    };
 
-    // Scenario B: Reduce Payment
-    const scheduleB = generateSchedule(scenarioPrepayments, 'reduce_payment');
-    const interestB = scheduleB.reduce((sum, item) => sum + item.interest, 0);
-    const savingsB = Math.max(0, baselineTotalInterest.value - interestB);
+    // Base Scenario B: reduce_payment
+    const configB = { ...configA, strategy: 'reduce_payment' as const };
 
-    // For Scenario B, finding the new monthly payment.
-    // Use the month AFTER the prepayment (month + 1) to see the effect.
-    const nextRow = scheduleB.find((r) => r.month === month + 1);
-    const newMonthlyPayment = nextRow
-      ? nextRow.financialPayment + nextRow.desgravamen + nextRow.fireInsurance + nextRow.itf
+    const engineA = new MortgageEngine(configA);
+    const resultA = engineA.calculate();
+
+    const engineB = new MortgageEngine(configB);
+    const resultB = engineB.calculate();
+
+    // For Scenario B new monthly payment, we look at month after prepayment.
+    // If multiple prepayments, it's roughly the average or the new stable payment?
+    // Let's just take the payment from the month after the specific extra payment month we are checking,
+    // OR just use the last payment if it's stable.
+    // Ideally, find the row for (month + 1).
+    const nextRowB =
+      resultB.schedule.find((r) => r.month === month + 1) ||
+      resultB.schedule[resultB.schedule.length - 1];
+
+    // We need "New Monthly Payment" = Financial + Insurances.
+    // Engine row has `payment` which includes ITF.
+    // Let's use `financialPayment + desgravamen + fireInsurance`.
+    const newMonthlyPayment = nextRowB
+      ? nextRowB.financialPayment + nextRowB.desgravamen + nextRowB.fireInsurance
       : 0;
 
     return {
       scenarioA: {
-        savings: savingsA,
-        newEndDate: scheduleA.length, // info on months
-        interestTotal: interestA,
+        savings: resultA.strategyImpact.savedInterest,
+        newEndDate: resultA.schedule.length,
+        interestTotal: resultA.totals.totalInterest,
       },
       scenarioB: {
-        savings: savingsB,
+        savings: resultB.strategyImpact.savedInterest,
         newMonthlyPayment: newMonthlyPayment,
-        interestTotal: interestB,
+        interestTotal: resultB.totals.totalInterest,
       },
     };
   };
@@ -344,86 +322,67 @@ export function useMortgageCalculator({
     return (minMonthlyPayment.value / monthlySalary.value) * 100;
   });
 
-  // Global Strategy Summary
-  const globalStrategySummary = computed(() => {
-    const schedule = amortizationSchedule.value;
-    const hasStrategy = prepayments?.value && prepayments.value.length > 0;
+  // Backward compatibility wrapper for financialMonthlyPayment
+  // In Engine, we return a computed property or just use the first month's financial payment from result?
+  // Or recalculate purely?
+  // Engine calculates it internally.
+  // We can just expose a quick calc similar to Engine's internal method if needed, OR just return 0 if schedule empty.
+  // However, `initialFinancialMonthlyPayment` was exported.
+  // Let's use `engineResult.value.schedule[0].financialPayment` if available.
+  const financialMonthlyPayment = computed(() => {
+    const first = engineResult.value.schedule[0];
+    return first ? first.financialPayment : 0;
+  });
 
-    if (!hasStrategy) {
-      return {
-        hasStrategy: false,
-        totalCapitalInjected: 0,
-        totalITF: 0,
-        totalInvestment: 0,
-        operationsCount: 0,
-        originalInterest: baselineTotalInterest.value,
-        strategyInterest: totalInterest.value,
-        totalSavings: 0,
-        newEndDate: null,
-      };
-    }
-
-    // Calculate totals from the actual schedule where extra payments were applied
-    let totalCapitalInjected = 0;
-    let operationsCount = 0;
-
-    schedule.forEach((row) => {
-      if (row.capital - (row.financialPayment - row.interest) > 1) {
-        // Logic check: extraPayment is not explicitly in AmortizationRow interface provided in earlier steps.
-        // Standard row has: payment, financialPayment, interest, capital, ...
-        // capital = (financialPayment - interest) + extraCapital.
-        // So extraCapital = capital - (financialPayment - interest).
-        // Let's use that.
-        const normalCapital = Math.max(0, row.financialPayment - row.interest);
-        const extra = Math.max(0, row.capital - normalCapital);
-
-        // However, `row.payment` = `financialPayment + itf`.
-        // If extra capital was added, `row.payment` would typically reflect it if we tracked it?
-        // In `generateSchedule`:
-        // `capital += extraCapital; // For display`
-        // `financialPayment` is unaffected by extra calc in that specific month (it's the value BEFORE extra).
-        // So `row.capital` includes extra.
-        // `row.financialPayment` is the base payment.
-        // `row.interest` is interest.
-        // So `row.capital - (row.financialPayment - row.interest)` should be the extra.
-
-        if (extra > 1) {
-          // Tolerance
-          totalCapitalInjected += extra;
-          operationsCount++;
-        }
-      }
-    });
-
-    const totalITF = totalCapitalInjected * 0.00005;
-    const totalInvestment = totalCapitalInjected + totalITF;
-    const totalSavings = Math.max(0, baselineTotalInterest.value - totalInterest.value);
-
-    // Calculate new end date (approx)
-    // Original term is termYears * 12.
-    // New term is amortizationSchedule.value.length.
-    const originalEndMonth = termYears.value * 12;
-    const newEndMonth = schedule.length;
-    // We can return the Date object or just the month index/year.
-    // Let's return the simplified month count.
-
-    return {
-      hasStrategy: true,
-      totalCapitalInjected,
-      totalITF,
-      totalInvestment,
-      operationsCount,
-      originalInterest: baselineTotalInterest.value,
-      strategyInterest: totalInterest.value,
-      totalSavings,
-      newEndDate: newEndMonth < originalEndMonth ? newEndMonth : null,
+  const calculateOptimalPrepayment = (targetMonth: number) => {
+    // Create a temporary engine just for this calc to avoid reactivity loops?
+    // Or use the current config but override prepayments?
+    // The Engine method `calculateOptimalMonthlyExtra` does its own temp config logic.
+    // So we just need an instance.
+    // We can use the current engine instance if we exposed it?
+    // `engineResult` is computed, it returns the RESULT, not the engine instance.
+    // So we must instantiate a new engine.
+    const config: MortgageEngineConfig = {
+      price: price.value,
+      downPayment: downPayment.value,
+      annualRate: annualRate.value,
+      termYears: termYears.value,
+      desgravamenRate: desgravamenRate.value,
+      fireInsuranceRate: fireInsuranceRate.value,
+      prepayments: [], // We start fresh for optimal calc? Or add to existing? Prompt says "monto mínimo... necesario". Usually relative to baseline.
+      // Assuming we want to find the SINGLE Recurring Prepayment that achieves the goal, ignoring current ones?
+      // Or adding to current ones?
+      // "Sugiera... el monto mínimo...".
+      // Let's assume on top of nothing (fresh start) to give a clean number.
+      strategy: 'reduce_term',
+      startDate: new Date(),
+      intelligentStrategy: false,
+      monthlySalary: monthlySalary.value,
     };
+    const engine = new MortgageEngine(config);
+    return engine.calculateOptimalMonthlyExtra(targetMonth);
+  };
+
+  const pivotMonth = computed(() => {
+    const row = engineResult.value.schedule.find((r) => r.status === 'pivot');
+    return row ? row.month : null;
+  });
+
+  const maintenanceAmount = computed(() => {
+    if (!monthlySalary.value) return 0;
+    // financialMonthlyPayment might be from computed
+    // We want the theoretical limit
+    const riskCeiling = monthlySalary.value * 0.4;
+    return Math.max(0, riskCeiling - financialMonthlyPayment.value);
   });
 
   return {
     loanAmount,
+    stopOnCrossover: enableIntelligentStrategy, // Exposed alias for easier refactoring in views if needed, or rename
+    aggressiveContinuity,
+    calculateOptimalPrepayment, // Exposed
     monthlyRate,
-    financialMonthlyPayment: initialFinancialMonthlyPayment,
+    financialMonthlyPayment, // was initialFinancialMonthlyPayment
     amortizationSchedule,
     monthlyPayment: firstMonthPayment,
     firstMonthBreakdown,
@@ -440,5 +399,7 @@ export function useMortgageCalculator({
     validatePrepayment,
     compareStrategies,
     globalStrategySummary,
+    pivotMonth,
+    maintenanceAmount,
   };
 }

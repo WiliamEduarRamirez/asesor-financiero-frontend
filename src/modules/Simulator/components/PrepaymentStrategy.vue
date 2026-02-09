@@ -16,11 +16,18 @@ const props = defineProps<{
     month: number,
   ) => { isValid: boolean; message?: string; isEfficient?: boolean };
   compareStrategies: (amount: number, month: number) => StrategyComparison;
+  stopOnCrossover: boolean;
+  aggressiveContinuity: boolean; // New prop
+  calculateOptimalPrepayment: (targetMonth: number) => number;
+  pivotMonth: number | null;
+  maintenanceAmount: number;
 }>();
 
 const emit = defineEmits<{
   (e: 'update:prepayments', value: Prepayment[]): void;
   (e: 'update:prepaymentStrategy', value: PrepaymentStrategy): void;
+  (e: 'update:stopOnCrossover', value: boolean): void;
+  (e: 'update:aggressiveContinuity', value: boolean): void;
   (e: 'add-prepayment'): void;
   (e: 'add-recurring-prepayment', value: Prepayment): void;
   (e: 'remove-prepayment', index: number): void;
@@ -219,7 +226,14 @@ const recurringRules = computed(() => {
       :prepayment-strategy="prepaymentStrategy"
       :validate-prepayment="validatePrepayment"
       :compare-strategies="compareStrategies"
+      :stop-on-crossover="stopOnCrossover"
+      :aggressive-continuity="aggressiveContinuity"
+      :calculate-optimal-prepayment="calculateOptimalPrepayment"
+      :pivot-month="pivotMonth"
+      :maintenance-amount="maintenanceAmount"
       @update:prepayment-strategy="(val) => emit('update:prepaymentStrategy', val)"
+      @update:stop-on-crossover="(val) => emit('update:stopOnCrossover', val)"
+      @update:aggressive-continuity="(val) => emit('update:aggressiveContinuity', val)"
       @add-prepayment="emit('add-prepayment')"
       @add-recurring-prepayment="(val) => emit('add-recurring-prepayment', val)"
       @remove-prepayment="(idx) => emit('remove-prepayment', idx)"

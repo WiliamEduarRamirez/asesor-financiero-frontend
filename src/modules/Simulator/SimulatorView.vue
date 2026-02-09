@@ -40,6 +40,11 @@ const {
   compareStrategies,
   firstMonthBreakdown, // Still used for Month 1 badge? Maybe not.
   globalStrategySummary,
+  stopOnCrossover,
+  aggressiveContinuity,
+  calculateOptimalPrepayment,
+  pivotMonth,
+  maintenanceAmount,
 } = useMortgageCalculator({
   price,
   downPayment,
@@ -240,6 +245,11 @@ const formatCurrency = (value: number) => {
           :term-years="termYears"
           :validate-prepayment="validatePrepayment"
           :compare-strategies="compareStrategies"
+          v-model:stop-on-crossover="stopOnCrossover"
+          v-model:aggressive-continuity="aggressiveContinuity"
+          :calculate-optimal-prepayment="calculateOptimalPrepayment"
+          :pivot-month="pivotMonth"
+          :maintenance-amount="maintenanceAmount"
           @add-prepayment="addPrepayment"
           @add-recurring-prepayment="addRecurringPrepayment"
           @remove-prepayment="removePrepayment"

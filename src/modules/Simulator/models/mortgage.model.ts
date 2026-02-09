@@ -8,6 +8,16 @@ export interface AmortizationRow {
   fireInsurance: number;
   itf: number;
   balance: number;
+
+  // Refactor Additions
+  itfBase: number;
+  itfExtra: number;
+  extraCapital: number;
+  isCrossover: boolean;
+  interestSavings?: number;
+  paymentDate?: Date;
+  daysInPeriod?: number;
+  status?: 'default' | 'acceleration' | 'pivot' | 'protected'; // For Intelligent Strategy badges
 }
 
 export interface Prepayment {
