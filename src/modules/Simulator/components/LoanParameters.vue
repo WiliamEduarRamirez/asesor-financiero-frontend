@@ -1,8 +1,18 @@
 <script setup lang="ts">
 import { useLoanParameters } from '../composables/useLoanParameters';
 import LoanRateConfig from './LoanRateConfig.vue';
+import TermReductionPlan from './TermReductionPlan.vue';
 
 const { price, downPayment, termYears, monthlySalary, downPaymentPercentage } = useLoanParameters();
+
+defineProps<{
+  monthlyPayment?: number;
+}>();
+
+type ApplyPlanPayload = { amount: number; interval: number };
+const emit = defineEmits<{
+  'apply-plan': [payload: ApplyPlanPayload];
+}>();
 </script>
 
 <template>
@@ -80,6 +90,13 @@ const { price, downPayment, termYears, monthlySalary, downPaymentPercentage } = 
           />
         </div>
       </div>
+
+      <!-- Term Reduction Plan -->
+      <TermReductionPlan
+        :monthly-salary="monthlySalary"
+        :monthly-payment="monthlyPayment || 0"
+        @apply-plan="(payload) => emit('apply-plan', payload)"
+      />
     </div>
   </div>
 </template>

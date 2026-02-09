@@ -252,9 +252,6 @@ export class MortgageEngine {
     let currentDate = startDate;
     // Intelligent Strategy State
     let isEquilibriumReached = false;
-    // Attack Rule Constant (could be configurable)
-    const ATTACK_AMOUNT = 6000;
-    const ATTACK_INTERVAL = 3;
 
     for (let month = 1; month <= maxMonths; month++) {
       if (balance <= 0.05) break;
@@ -281,17 +278,19 @@ export class MortgageEngine {
       let status: 'default' | 'acceleration' | 'pivot' | 'protected' = 'default';
 
       if (intelligentStrategy) {
+        // Calculate total prepayment for this month from ALL prepayments
+        const totalPrepaymentThisMonth = this.calculateExtraCapital(month, prepayments);
+
         if (isEquilibriumReached) {
           // Equilibrium already reached
           if (aggressiveContinuity) {
-            // Aggressive Mode: Continue Attack
-            if (month % ATTACK_INTERVAL === 0) {
-              extraCapital = ATTACK_AMOUNT;
+            // Aggressive Mode: Continue with all configured prepayments
+            extraCapital = totalPrepaymentThisMonth;
+            if (extraCapital > 0) {
               status = 'acceleration';
             }
           } else {
             // Conservative Mode: Stop Prepayments
-            // "Las amortizaciones se detendrán automáticamente... para proteger tu patrimonio y liquidez"
             extraCapital = 0;
             status = 'protected';
           }
@@ -301,9 +300,9 @@ export class MortgageEngine {
             isEquilibriumReached = true;
 
             if (aggressiveContinuity) {
-              // Continue Attack
-              if (month % ATTACK_INTERVAL === 0) {
-                extraCapital = ATTACK_AMOUNT;
+              // Continue with all configured prepayments
+              extraCapital = totalPrepaymentThisMonth;
+              if (extraCapital > 0) {
                 status = 'acceleration';
               }
             } else {
@@ -313,8 +312,8 @@ export class MortgageEngine {
             }
           } else {
             // Still in Attack Phase (Before Equilibrium)
-            if (month % ATTACK_INTERVAL === 0) {
-              extraCapital = ATTACK_AMOUNT;
+            extraCapital = totalPrepaymentThisMonth;
+            if (extraCapital > 0) {
               status = 'acceleration';
             }
           }

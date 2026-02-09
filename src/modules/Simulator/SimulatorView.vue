@@ -59,6 +59,28 @@ const {
   prepayments,
   prepaymentStrategy,
 });
+
+// Handle Term Reduction Plan
+const handleApplyPlan = (payload: { amount: number; interval: number }) => {
+  // Clear existing prepayments
+  while (prepayments.value.length > 0) {
+    removePrepayment(0);
+  }
+
+  // Add new recurring prepayment based on plan
+  // Start at interval + 1 (e.g., if saving takes 3 months, first payment is month 4)
+  // Interval is also + 1 to account for full cycle (save 3 months, pay on 4th, repeat)
+  addRecurringPrepayment({
+    amount: payload.amount,
+    month: payload.interval + 1,
+    frequency: 'recurring',
+    interval: payload.interval + 1,
+  });
+
+  // Activate intelligent strategy with aggressive continuity
+  stopOnCrossover.value = true;
+  aggressiveContinuity.value = true;
+};
 </script>
 
 <template>
@@ -76,7 +98,7 @@ const {
       <!-- Left Column: Form -->
       <div class="lg:col-span-5 space-y-6">
         <!-- Loan Parameters Component -->
-        <LoanParameters />
+        <LoanParameters :monthly-payment="monthlyPayment" @apply-plan="handleApplyPlan" />
 
         <!-- Prepayment Strategy Component -->
         <PrepaymentStrategy

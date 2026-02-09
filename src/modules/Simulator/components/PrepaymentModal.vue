@@ -253,6 +253,7 @@ const formatCurrency = (value: number) => {
                     class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-slate-700 bg-white"
                   >
                     <option :value="1">Cada mes</option>
+                    <option :value="2">Cada 2 meses</option>
                     <option :value="3">Cada 3 meses</option>
                     <option :value="6">Cada 6 meses</option>
                     <option :value="12">Cada año</option>
