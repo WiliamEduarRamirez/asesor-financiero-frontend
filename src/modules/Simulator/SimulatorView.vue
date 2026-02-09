@@ -9,6 +9,7 @@ import LoanParameters from './components/LoanParameters.vue';
 import SimulatorKPIs from './components/SimulatorKPIs.vue';
 import StrategyImpactCard from './components/StrategyImpactCard.vue';
 import PaymentDistributionChart from './components/PaymentDistributionChart.vue';
+import EquilibriumChart from './components/EquilibriumChart.vue';
 import { useRates } from './composables/useRates';
 
 useRates(); // Initialize rates logic
@@ -121,5 +122,8 @@ const {
 
     <!-- Amortization Table -->
     <AmortizationTable :schedule="amortizationSchedule" />
+
+    <!-- Equilibrium Chart -->
+    <EquilibriumChart :schedule="amortizationSchedule" :monthly-salary="monthlySalary" />
   </div>
 </template>
