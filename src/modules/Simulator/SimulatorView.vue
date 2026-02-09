@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useMortgageStore } from './stores/useMortgageStore';
 import { storeToRefs } from 'pinia';
 import AmortizationTable from './components/AmortizationTable.vue';
@@ -11,6 +12,7 @@ import SimulatorKPIs from './components/SimulatorKPIs.vue';
 import StrategyImpactCard from './components/StrategyImpactCard.vue';
 import PaymentDistributionChart from './components/PaymentDistributionChart.vue';
 import EquilibriumChart from './components/EquilibriumChart.vue';
+import PaymentProgression from './components/PaymentProgression.vue';
 import { useRates } from './composables/useRates';
 
 useRates(); // Initialize rates logic
@@ -69,6 +71,9 @@ const {
   prepaymentStrategy,
   refinancingEvents,
 });
+
+// Computed for UI flags
+const hasRefinancingEvents = computed(() => refinancingEvents.value.length > 0);
 
 // Handle Term Reduction Plan
 const handleApplyPlan = (payload: { amount: number; interval: number }) => {
@@ -149,6 +154,16 @@ const handleApplyPlan = (payload: { amount: number; interval: number }) => {
           :risk-status="riskStatus"
           :total-interest="totalInterest"
           :first-month-breakdown="firstMonthBreakdown"
+          :has-refinancing-events="hasRefinancingEvents"
+        />
+
+        <!-- Payment Progression Timeline -->
+        <PaymentProgression
+          :refinancing-events="refinancingEvents"
+          :initial-monthly-payment="monthlyPayment"
+          :initial-rate="annualRate"
+          :term-months="termYears * 12"
+          :amortization-schedule="amortizationSchedule"
         />
 
         <!-- Global Strategy Detail Card -->

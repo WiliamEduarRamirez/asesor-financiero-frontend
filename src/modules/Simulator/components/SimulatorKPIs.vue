@@ -13,6 +13,7 @@ defineProps<{
   };
   totalInterest: number;
   firstMonthBreakdown: { hasPrepayment: boolean };
+  hasRefinancingEvents?: boolean;
 }>();
 
 const formatCurrency = (value: number) => {
@@ -43,10 +44,24 @@ const formatCurrency = (value: number) => {
 
       <template #footer>
         <div
+          v-if="!hasRefinancingEvents"
           class="text-xs text-green-600 flex items-center gap-1 font-medium bg-green-50 w-fit px-2 py-1 rounded"
         >
           <iconify-icon icon="mdi:check-circle"></iconify-icon>
           Fija por {{ termYears }} años
+        </div>
+
+        <div v-else class="space-y-2">
+          <div
+            class="text-xs text-purple-600 flex items-center gap-1 font-medium bg-purple-50 px-2 py-1 rounded"
+          >
+            <iconify-icon icon="mdi:information"></iconify-icon>
+            Esta es la cuota inicial
+          </div>
+          <p class="text-[10px] text-slate-500 leading-tight">
+            Para ver la evolución de tus cuotas reducidas por compra de deuda, revisa la sección de
+            <span class="font-semibold text-purple-600">Progresión de Pagos</span> abajo.
+          </p>
         </div>
       </template>
     </KpiCard>
