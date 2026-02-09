@@ -7,7 +7,11 @@ import type {
   StrategyComparison,
 } from '../models/mortgage.model';
 
-import { MortgageEngine, type MortgageEngineConfig } from '../utils/MortgageEngine';
+import {
+  MortgageEngine,
+  type MortgageEngineConfig,
+  type RefinancingEvent,
+} from '../utils/MortgageEngine';
 
 interface MortgageCalculatorParams {
   price: Ref<number>;
@@ -19,6 +23,7 @@ interface MortgageCalculatorParams {
   fireInsuranceRate: Ref<number>; // Monthly %
   prepayments?: Ref<Prepayment[]>;
   prepaymentStrategy?: Ref<PrepaymentStrategy>;
+  refinancingEvents?: Ref<RefinancingEvent[]>;
   startDate?: Date;
 }
 
@@ -32,6 +37,7 @@ export function useMortgageCalculator({
   fireInsuranceRate,
   prepayments,
   prepaymentStrategy,
+  refinancingEvents,
 }: MortgageCalculatorParams) {
   // Getters / Computed
   const loanAmount = computed(() => price.value - downPayment.value);
@@ -60,6 +66,7 @@ export function useMortgageCalculator({
       intelligentStrategy: enableIntelligentStrategy.value,
       aggressiveContinuity: aggressiveContinuity.value,
       monthlySalary: monthlySalary.value,
+      refinancingEvents: refinancingEvents?.value || [],
     };
 
     const engine = new MortgageEngine(config);

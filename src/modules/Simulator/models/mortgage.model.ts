@@ -18,6 +18,19 @@ export interface AmortizationRow {
   paymentDate?: Date;
   daysInPeriod?: number;
   status?: 'default' | 'acceleration' | 'pivot' | 'protected'; // For Intelligent Strategy badges
+
+  // Refinancing (Debt Optimization)
+  refinancingEvent?: {
+    id: string;
+    month: number;
+    newRate: number;
+    closingCosts: number;
+    color: string;
+    label?: string;
+  };
+  backgroundColor?: string;
+  periodLabel?: string;
+  tea?: number; // Current TEA for this month
 }
 
 export interface Prepayment {

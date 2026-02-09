@@ -2,16 +2,22 @@
 import { useLoanParameters } from '../composables/useLoanParameters';
 import LoanRateConfig from './LoanRateConfig.vue';
 import TermReductionPlan from './TermReductionPlan.vue';
+import DebtOptimization from './DebtOptimization.vue';
+import type { RefinancingEvent } from '../composables/useDebtOptimization';
 
 const { price, downPayment, termYears, monthlySalary, downPaymentPercentage } = useLoanParameters();
 
 defineProps<{
   monthlyPayment?: number;
+  refinancingEvents?: RefinancingEvent[];
 }>();
 
 type ApplyPlanPayload = { amount: number; interval: number };
 const emit = defineEmits<{
   'apply-plan': [payload: ApplyPlanPayload];
+  'add-refinancing-event': [event: Omit<RefinancingEvent, 'id'>];
+  'remove-refinancing-event': [id: string];
+  'update-refinancing-event': [id: string, updates: Partial<Omit<RefinancingEvent, 'id'>>];
 }>();
 </script>
 
@@ -96,6 +102,14 @@ const emit = defineEmits<{
         :monthly-salary="monthlySalary"
         :monthly-payment="monthlyPayment || 0"
         @apply-plan="(payload) => emit('apply-plan', payload)"
+      />
+
+      <!-- Debt Optimization -->
+      <DebtOptimization
+        :refinancing-events="refinancingEvents || []"
+        @add-event="(event) => emit('add-refinancing-event', event)"
+        @remove-event="(id) => emit('remove-refinancing-event', id)"
+        @update-event="(id, updates) => emit('update-refinancing-event', id, updates)"
       />
     </div>
   </div>

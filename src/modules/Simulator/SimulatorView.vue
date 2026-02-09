@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia';
 import AmortizationTable from './components/AmortizationTable.vue';
 import { useMortgageCalculator } from './composables/useMortgageCalculator';
 import { usePrepayments } from './composables/usePrepayments';
+import { useDebtOptimization } from './composables/useDebtOptimization';
 import PrepaymentStrategy from './components/PrepaymentStrategy.vue';
 import LoanParameters from './components/LoanParameters.vue';
 import SimulatorKPIs from './components/SimulatorKPIs.vue';
@@ -28,6 +29,14 @@ const {
 
 const { prepayments, prepaymentStrategy, addPrepayment, addRecurringPrepayment, removePrepayment } =
   usePrepayments();
+
+// Debt Optimization
+const {
+  refinancingEvents,
+  addEvent: addRefinancingEvent,
+  removeEvent: removeRefinancingEvent,
+  updateEvent: updateRefinancingEvent,
+} = useDebtOptimization();
 
 // Logic moved to composable
 const {
@@ -58,6 +67,7 @@ const {
   fireInsuranceRate,
   prepayments,
   prepaymentStrategy,
+  refinancingEvents,
 });
 
 // Handle Term Reduction Plan
@@ -98,7 +108,14 @@ const handleApplyPlan = (payload: { amount: number; interval: number }) => {
       <!-- Left Column: Form -->
       <div class="lg:col-span-5 space-y-6">
         <!-- Loan Parameters Component -->
-        <LoanParameters :monthly-payment="monthlyPayment" @apply-plan="handleApplyPlan" />
+        <LoanParameters
+          :monthly-payment="monthlyPayment"
+          :refinancing-events="refinancingEvents"
+          @apply-plan="handleApplyPlan"
+          @add-refinancing-event="addRefinancingEvent"
+          @remove-refinancing-event="removeRefinancingEvent"
+          @update-refinancing-event="updateRefinancingEvent"
+        />
 
         <!-- Prepayment Strategy Component -->
         <PrepaymentStrategy

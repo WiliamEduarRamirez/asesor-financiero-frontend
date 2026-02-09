@@ -1,6 +1,15 @@
 import { addMonths, startOfDay, differenceInDays } from 'date-fns';
 import type { Prepayment, PrepaymentStrategy } from '../models/mortgage.model';
 
+export interface RefinancingEvent {
+  id: string;
+  month: number;
+  newRate: number; // Nueva TEA %
+  closingCosts: number; // Gastos de cierre
+  color: string; // Color identificador
+  label?: string;
+}
+
 export interface MortgageEngineConfig {
   price: number;
   downPayment: number;
@@ -14,6 +23,7 @@ export interface MortgageEngineConfig {
   monthlySalary?: number; // Required for Intelligent Strategy Phase 2
   intelligentStrategy?: boolean;
   aggressiveContinuity?: boolean; // New flag: Continue Attack even after equilibrium
+  refinancingEvents?: RefinancingEvent[]; // Debt optimization events
 }
 
 export interface EngineScheduleRow {
@@ -47,6 +57,11 @@ export interface EngineScheduleRow {
   isCrossover: boolean;
   interestSavings?: number;
   status?: 'default' | 'acceleration' | 'pivot' | 'protected';
+
+  // Refinancing
+  refinancingEvent?: RefinancingEvent; // If this month has a refinancing
+  backgroundColor?: string; // Color tint for this period
+  periodLabel?: string; // Label for this refinancing period
 }
 
 export interface EngineResult {
@@ -227,16 +242,23 @@ export class MortgageEngine {
       startDate = new Date(),
       intelligentStrategy,
       aggressiveContinuity,
+      refinancingEvents = [],
       // monthlySalary, // Not used in current aggressive/conservative logic, as we just stop or continue.
     } = config;
 
     const loanAmount = price - downPayment;
-    const tem = this.calculateTEM(annualRate);
-    const ted = this.calculateTED(annualRate);
     const monthlyFireInsurance = this.round(price * (fireInsuranceRate / 100));
 
+    // Sort refinancing events by month
+    const sortedRefinancingEvents = [...refinancingEvents].sort((a, b) => a.month - b.month);
+
+    // Track current rate (starts with base rate, changes with refinancing)
+    let currentRate = annualRate;
+    let currentTem = this.calculateTEM(currentRate);
+    let currentTed = this.calculateTED(currentRate);
+
     let balance = loanAmount;
-    let currentTargetQuota = this.calculatePMT(loanAmount, tem, termYears * 12);
+    let currentTargetQuota = this.calculatePMT(loanAmount, currentTem, termYears * 12);
 
     const schedule: EngineScheduleRow[] = [];
     const totals = {
@@ -253,6 +275,10 @@ export class MortgageEngine {
     // Intelligent Strategy State
     let isEquilibriumReached = false;
 
+    // Track current refinancing period for color coding
+    let currentPeriodColor: string | undefined = undefined;
+    let currentPeriodLabel: string | undefined = undefined;
+
     for (let month = 1; month <= maxMonths; month++) {
       if (balance <= 0.05) break;
 
@@ -260,7 +286,29 @@ export class MortgageEngine {
       currentDate = addMonths(startDate, month);
       const daysInPeriod = this.getDaysInPeriod(prevDate, currentDate);
 
-      const interestFactor = Math.pow(1 + ted, daysInPeriod) - 1;
+      // Check for refinancing event at this month
+      const refinancingEvent = sortedRefinancingEvents.find((e) => e.month === month);
+
+      if (refinancingEvent) {
+        // Apply new rate
+        currentRate = refinancingEvent.newRate;
+        currentTem = this.calculateTEM(currentRate);
+        currentTed = this.calculateTED(currentRate);
+
+        // Recalculate quota with new rate and remaining months
+        const remainingMonths = maxMonths - month + 1;
+        currentTargetQuota = this.calculatePMT(balance, currentTem, remainingMonths);
+
+        // Apply closing costs to balance
+        balance += refinancingEvent.closingCosts;
+
+        // Update period color and label
+        currentPeriodColor = refinancingEvent.color;
+        currentPeriodLabel =
+          refinancingEvent.label || `Refinanciamiento - TEA ${refinancingEvent.newRate}%`;
+      }
+
+      const interestFactor = Math.pow(1 + currentTed, daysInPeriod) - 1;
       const interest = this.round(balance * interestFactor);
       const desgravamen = this.round(balance * (desgravamenRate / 100));
 
@@ -358,8 +406,8 @@ export class MortgageEngine {
         month,
         paymentDate: currentDate,
         daysInPeriod,
-        tea: annualRate,
-        ted,
+        tea: currentRate,
+        ted: currentTed,
         balanceStart: balance,
         interest,
         desgravamen,
@@ -376,6 +424,9 @@ export class MortgageEngine {
         hasPrepayment: extraCapital > 0,
         isCrossover,
         status,
+        refinancingEvent,
+        backgroundColor: currentPeriodColor,
+        periodLabel: currentPeriodLabel,
       });
 
       balance = balanceEnd;
@@ -383,7 +434,7 @@ export class MortgageEngine {
       if (extraCapital > 0 && balance > 0 && strategy === 'reduce_payment') {
         const remainingMonths = maxMonths - month;
         if (remainingMonths > 0) {
-          currentTargetQuota = this.calculatePMT(balance, tem, remainingMonths);
+          currentTargetQuota = this.calculatePMT(balance, currentTem, remainingMonths);
         }
       }
     }

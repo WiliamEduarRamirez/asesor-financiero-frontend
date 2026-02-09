@@ -76,6 +76,7 @@ const formatCurrency = (value: number) => {
                   ? 'bg-emerald-50/50 hover:bg-emerald-100/50'
                   : 'hover:bg-slate-50',
               ]"
+              :style="row.backgroundColor ? { backgroundColor: row.backgroundColor } : {}"
             >
               <td
                 class="px-4 py-3 text-center font-medium text-slate-500 bg-white/50 sticky left-0"
@@ -130,6 +131,16 @@ const formatCurrency = (value: number) => {
               <!-- Hitos -->
               <td class="px-2 py-3 text-center align-middle">
                 <div class="flex flex-col items-center justify-center gap-1">
+                  <!-- Refinancing Badge -->
+                  <span
+                    v-if="row.refinancingEvent"
+                    :title="`${row.refinancingEvent.label || 'Compra de Deuda'}: Nueva TEA ${row.refinancingEvent.newRate}%`"
+                    class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-purple-100 text-purple-700 border border-purple-300 ring-2 ring-purple-50"
+                  >
+                    <iconify-icon icon="mdi:swap-horizontal-circle" class="mr-1"></iconify-icon>
+                    Nueva Tasa {{ row.refinancingEvent.newRate }}%
+                  </span>
+
                   <!-- Acceleration Badge -->
                   <span
                     v-if="row.status === 'acceleration'"
