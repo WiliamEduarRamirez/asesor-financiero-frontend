@@ -17,6 +17,7 @@ const rentalIncome = ref(600);
 const startMonth = ref(1);
 const endMonth = ref(60);
 const annualIncrease = ref(0);
+const savingsPercentage = ref(50); // Default 50% of surplus for savings
 
 // Computed
 const surplus = computed(() => {
@@ -35,7 +36,7 @@ const simulationResult = computed(() => {
 
   const rawTargetAmount = props.monthlyPayment * 2; // Dynamic: double the monthly payment
   const targetAmount = roundToNearestHundred(rawTargetAmount); // Round to nearest 100
-  const savingsAllocation = surplus.value * 0.5;
+  const savingsAllocation = surplus.value * (savingsPercentage.value / 100);
 
   // Simulate accumulation
   let accumulated = 0;
@@ -173,6 +174,26 @@ const applyPlan = () => {
       </div>
     </div>
 
+    <!-- Savings Percentage Configuration -->
+    <div class="bg-white rounded-lg p-3 border border-slate-200 mt-4">
+      <label class="block text-xs font-bold text-slate-600 uppercase mb-2">
+        Porcentaje de Ahorro del Excedente
+      </label>
+      <div class="relative">
+        <input
+          v-model.number="savingsPercentage"
+          type="number"
+          min="0"
+          max="100"
+          class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800 font-bold bg-white"
+        />
+        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">%</span>
+      </div>
+      <p class="text-[10px] text-slate-400 mt-1">
+        Porcentaje del excedente mensual destinado al ahorro (por defecto 50%)
+      </p>
+    </div>
+
     <!-- Simulation Summary -->
     <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 space-y-2">
       <div class="flex justify-between items-center text-xs">
@@ -180,8 +201,16 @@ const applyPlan = () => {
         <span class="font-bold text-slate-700">{{ formatCurrency(surplus) }}</span>
       </div>
       <div class="flex justify-between items-center text-xs">
-        <span class="text-slate-500">Destinado al Ahorro (50%)</span>
-        <span class="font-bold text-emerald-600">{{ formatCurrency(surplus * 0.5) }}</span>
+        <span class="text-slate-500">Destinado al Ahorro ({{ savingsPercentage }}%)</span>
+        <span class="font-bold text-emerald-600">{{
+          formatCurrency(surplus * (savingsPercentage / 100))
+        }}</span>
+      </div>
+      <div class="flex justify-between items-center text-xs border-t border-slate-200 pt-2">
+        <span class="text-slate-600 font-semibold">💰 Disponible para Vivir</span>
+        <span class="font-bold text-indigo-600">{{
+          formatCurrency(surplus * (1 - savingsPercentage / 100))
+        }}</span>
       </div>
 
       <div class="mt-2 pt-2 border-t border-slate-200">
