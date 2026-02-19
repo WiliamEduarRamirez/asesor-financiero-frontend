@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BaseCard, BaseIcon } from '@/core/ui';
 defineProps<{
   title: string;
   value: string;
@@ -9,14 +10,15 @@ defineProps<{
 </script>
 
 <template>
-  <div
-    class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden group transition-all hover:shadow-md"
+  <BaseCard
+    class="relative overflow-hidden group transition-all hover:shadow-md h-full"
+    padding="md"
   >
     <div
       class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"
       :class="iconClass"
     >
-      <iconify-icon :icon="icon" width="60"></iconify-icon>
+      <BaseIcon :icon="icon" :size="60" />
     </div>
 
     <div class="relative z-10">
@@ -35,5 +37,5 @@ defineProps<{
         </slot>
       </div>
     </div>
-  </div>
+  </BaseCard>
 </template>

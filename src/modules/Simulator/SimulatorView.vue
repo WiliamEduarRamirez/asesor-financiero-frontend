@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { useMortgageStore } from './stores/useMortgageStore';
 import { storeToRefs } from 'pinia';
 import AmortizationTable from './components/AmortizationTable.vue';
@@ -13,6 +13,9 @@ import StrategyImpactCard from './components/StrategyImpactCard.vue';
 import PaymentDistributionChart from './components/PaymentDistributionChart.vue';
 import EquilibriumChart from './components/EquilibriumChart.vue';
 import PaymentProgression from './components/PaymentProgression.vue';
+import TermReductionPlan from './components/TermReductionPlan.vue';
+import DebtOptimization from './components/DebtOptimization.vue';
+import { BaseTabs } from '@/core/ui';
 import { useRates } from './composables/useRates';
 
 useRates(); // Initialize rates logic
@@ -96,11 +99,18 @@ const handleApplyPlan = (payload: { amount: number; interval: number }) => {
   stopOnCrossover.value = true;
   aggressiveContinuity.value = true;
 };
+
+const tabs = [
+  { value: 'config', label: 'Resumen Inicial', icon: 'heroicons:document-text' },
+  { value: 'strategies', label: 'Estrategias de Pago', icon: 'heroicons:banknotes' },
+  { value: 'table', label: 'Análisis Detallado', icon: 'heroicons:table-cells' },
+];
+const activeTab = ref('config');
 </script>
 
 <template>
   <div class="space-y-6">
-    <div class="flex items-center justify-between">
+    <div class="flex items-center justify-between mb-4">
       <h2 class="text-3xl font-bold text-slate-800 tracking-tight">Hipoteca Inteligente</h2>
       <span
         class="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200"
@@ -109,20 +119,37 @@ const handleApplyPlan = (payload: { amount: number; interval: number }) => {
       </span>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-      <!-- Left Column: Form -->
-      <div class="lg:col-span-5 space-y-6">
-        <!-- Loan Parameters Component -->
-        <LoanParameters
-          :monthly-payment="monthlyPayment"
-          :refinancing-events="refinancingEvents"
-          @apply-plan="handleApplyPlan"
-          @add-refinancing-event="addRefinancingEvent"
-          @remove-refinancing-event="removeRefinancingEvent"
-          @update-refinancing-event="updateRefinancingEvent"
-        />
+    <!-- Tabs Navigation -->
+    <BaseTabs v-model="activeTab" :tabs="tabs" class="mb-4" />
 
-        <!-- Prepayment Strategy Component -->
+    <!-- Tab 1: Configuration -->
+    <div
+      v-if="activeTab === 'config'"
+      class="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
+    >
+      <div class="lg:col-span-5 space-y-6">
+        <LoanParameters :monthly-payment="monthlyPayment" />
+      </div>
+      <div class="lg:col-span-7 space-y-6">
+        <SimulatorKPIs
+          :monthly-payment="monthlyPayment"
+          :term-years="termYears"
+          :salary-percentage="salaryPercentage"
+          :risk-status="riskStatus"
+          :total-interest="totalInterest"
+          :first-month-breakdown="firstMonthBreakdown"
+          :has-refinancing-events="hasRefinancingEvents"
+        />
+        <PaymentDistributionChart :loan-amount="loanAmount" :total-interest="totalInterest" />
+      </div>
+    </div>
+
+    <!-- Tab 2: Strategies -->
+    <div
+      v-if="activeTab === 'strategies'"
+      class="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
+    >
+      <div class="lg:col-span-5 space-y-6">
         <PrepaymentStrategy
           v-model:prepayments="prepayments"
           v-model:prepaymentStrategy="prepaymentStrategy"
@@ -142,22 +169,22 @@ const handleApplyPlan = (payload: { amount: number; interval: number }) => {
           @add-recurring-prepayment="addRecurringPrepayment"
           @remove-prepayment="removePrepayment"
         />
-      </div>
 
-      <!-- Right Column: KPIs & Charts -->
-      <div class="lg:col-span-7 space-y-6">
-        <!-- KPI Cards -->
-        <SimulatorKPIs
-          :monthly-payment="monthlyPayment"
-          :term-years="termYears"
-          :salary-percentage="salaryPercentage"
-          :risk-status="riskStatus"
-          :total-interest="totalInterest"
-          :first-month-breakdown="firstMonthBreakdown"
-          :has-refinancing-events="hasRefinancingEvents"
+        <TermReductionPlan
+          :monthly-salary="monthlySalary"
+          :monthly-payment="monthlyPayment || 0"
+          @apply-plan="handleApplyPlan"
         />
 
-        <!-- Payment Progression Timeline -->
+        <DebtOptimization
+          :refinancing-events="refinancingEvents || []"
+          @add-event="addRefinancingEvent"
+          @remove-event="removeRefinancingEvent"
+          @update-event="updateRefinancingEvent"
+        />
+      </div>
+      <div class="lg:col-span-7 space-y-6">
+        <StrategyImpactCard :summary="globalStrategySummary" :term-years="termYears" />
         <PaymentProgression
           :refinancing-events="refinancingEvents"
           :initial-monthly-payment="monthlyPayment"
@@ -165,19 +192,16 @@ const handleApplyPlan = (payload: { amount: number; interval: number }) => {
           :term-months="termYears * 12"
           :amortization-schedule="amortizationSchedule"
         />
-
-        <!-- Global Strategy Detail Card -->
-        <StrategyImpactCard :summary="globalStrategySummary" :term-years="termYears" />
-
-        <!-- Chart -->
-        <PaymentDistributionChart :loan-amount="loanAmount" :total-interest="totalInterest" />
       </div>
     </div>
 
-    <!-- Amortization Table -->
-    <AmortizationTable :schedule="amortizationSchedule" />
-
-    <!-- Equilibrium Chart -->
-    <EquilibriumChart :schedule="amortizationSchedule" :monthly-salary="monthlySalary" />
+    <!-- Tab 3: Detailed Analysis -->
+    <div
+      v-if="activeTab === 'table'"
+      class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
+    >
+      <EquilibriumChart :schedule="amortizationSchedule" :monthly-salary="monthlySalary" />
+      <AmortizationTable :schedule="amortizationSchedule" />
+    </div>
   </div>
 </template>

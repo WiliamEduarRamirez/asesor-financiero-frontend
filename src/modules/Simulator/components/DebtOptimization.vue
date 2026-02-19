@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { RefinancingEvent } from '../composables/useDebtOptimization';
+import { BaseCard, BaseIcon } from '@/core/ui';
 
-const props = defineProps<{
+defineProps<{
   refinancingEvents: RefinancingEvent[];
 }>();
 
@@ -62,10 +63,10 @@ const formatCurrency = (val: number) => {
 </script>
 
 <template>
-  <div class="pt-5 border-t border-slate-100 mt-5">
+  <BaseCard>
     <div class="flex items-center justify-between mb-4">
       <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-        <iconify-icon icon="mdi:swap-horizontal-circle" class="text-purple-600"></iconify-icon>
+        <BaseIcon icon="mdi:swap-horizontal-circle" class="text-purple-600" />
         Optimización por Compra de Deuda
       </h3>
 
@@ -73,7 +74,7 @@ const formatCurrency = (val: number) => {
         @click="showForm = !showForm"
         class="text-xs font-semibold text-purple-600 hover:text-purple-700 flex items-center gap-1 transition-colors"
       >
-        <iconify-icon :icon="showForm ? 'mdi:minus-circle' : 'mdi:plus-circle'"></iconify-icon>
+        <BaseIcon :icon="showForm ? 'mdi:minus-circle' : 'mdi:plus-circle'" />
         {{ showForm ? 'Cancelar' : '+ Añadir Optimización' }}
       </button>
     </div>
@@ -169,7 +170,7 @@ const formatCurrency = (val: number) => {
         @click="addEvent"
         class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm"
       >
-        <iconify-icon icon="mdi:check-circle"></iconify-icon>
+        <BaseIcon icon="mdi:check-circle" />
         Añadir Evento
       </button>
     </div>
@@ -201,7 +202,7 @@ const formatCurrency = (val: number) => {
           @click="emit('remove-event', event.id)"
           class="ml-3 text-red-500 hover:text-red-700 transition-colors"
         >
-          <iconify-icon icon="mdi:delete-circle" class="text-xl"></iconify-icon>
+          <BaseIcon icon="mdi:delete-circle" class="text-xl" />
         </button>
       </div>
     </div>
@@ -210,9 +211,9 @@ const formatCurrency = (val: number) => {
       v-else-if="!showForm"
       class="text-center py-6 text-xs text-slate-400 border border-dashed border-slate-200 rounded-lg"
     >
-      <iconify-icon icon="mdi:information-outline" class="text-2xl mb-2"></iconify-icon>
+      <BaseIcon icon="mdi:information-outline" class="text-2xl mb-2" />
       <p>No hay eventos de optimización configurados</p>
       <p class="text-[10px] mt-1">Haz clic en "+ Añadir Optimización" para crear uno</p>
     </div>
-  </div>
+  </BaseCard>
 </template>

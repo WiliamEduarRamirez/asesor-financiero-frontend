@@ -4,15 +4,18 @@ import { cva } from 'class-variance-authority';
 import { cn } from './utils';
 
 const inputVariants = cva(
-  'flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all font-medium text-slate-800',
+  'flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 transition-all font-medium text-slate-800',
   {
     variants: {
       variant: {
-        default: 'border-slate-200 placeholder-slate-400 bg-white shadow-sm hover:border-blue-300',
-        filled: 'bg-slate-50 border-transparent hover:bg-slate-100 focus:bg-white',
+        default:
+          'border-slate-200 placeholder-slate-400 bg-white shadow-sm hover:border-blue-400 focus:border-blue-600 focus:ring-1 focus:ring-blue-600',
+        filled:
+          'bg-slate-50 border-transparent hover:bg-slate-100 focus:bg-white focus:border-blue-600 focus:ring-1 focus:ring-blue-600',
         underlined:
-          'rounded-none border-t-0 border-l-0 border-r-0 border-b-2 px-0 shadow-none focus-visible:ring-0 focus:border-blue-600',
-        error: 'border-red-300 text-red-900 focus-visible:ring-red-300 placeholder-red-300',
+          'rounded-none border-t-0 border-l-0 border-r-0 border-b-2 px-0 shadow-none focus:ring-0 focus:border-blue-600',
+        error:
+          'border-red-400 text-red-900 focus:border-red-500 focus:ring-1 focus:ring-red-500 placeholder-red-300',
       },
       size: {
         default: 'h-10 py-2',
@@ -74,7 +77,8 @@ const updateValue = (event: Event) => {
     <label
       v-if="label"
       :for="id"
-      class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-slate-700 block mb-1.5"
+      class="font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-slate-700 block mb-1.5"
+      :class="size === 'sm' ? 'text-xs' : 'text-sm'"
     >
       {{ label }}
     </label>

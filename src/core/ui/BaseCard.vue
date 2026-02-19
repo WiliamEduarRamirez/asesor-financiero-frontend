@@ -44,16 +44,16 @@ const cardClass = computed(() =>
   <div :class="cardClass">
     <div
       v-if="$slots.header"
-      class="flex flex-col space-y-1.5 p-6 pb-0 border-b border-slate-100 mb-6 -mx-6 -mt-6 rounded-t-xl bg-slate-50/50"
+      class="flex flex-col space-y-1.5 p-6 pb-4 border-b border-slate-100 mb-6 -mx-6 -mt-6 rounded-t-xl bg-slate-50/50"
     >
       <slot name="header" />
     </div>
-    <div class="p-6 pt-0">
-      <slot />
-    </div>
+
+    <slot />
+
     <div
       v-if="$slots.footer"
-      class="flex items-center p-6 pt-0 border-t border-slate-100 mt-6 -mx-6 -mb-6 rounded-b-xl bg-slate-50/30"
+      class="flex items-center p-6 pt-4 border-t border-slate-100 mt-6 -mx-6 -mb-6 rounded-b-xl bg-slate-50/30"
     >
       <slot name="footer" />
     </div>

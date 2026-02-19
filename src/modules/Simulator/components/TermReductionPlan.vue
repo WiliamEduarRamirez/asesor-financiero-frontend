@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { BaseCard, BaseIcon } from '@/core/ui';
 
 const props = defineProps<{
   monthlySalary: number;
@@ -92,10 +93,10 @@ const applyPlan = () => {
 </script>
 
 <template>
-  <div class="pt-5 border-t border-slate-100 mt-5">
+  <BaseCard>
     <div class="flex items-center justify-between mb-4">
       <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-        <iconify-icon icon="mdi:rocket-launch" class="text-indigo-600"></iconify-icon>
+        <BaseIcon icon="mdi:rocket-launch" class="text-indigo-600" />
         Plan de Reducción de Plazo
       </h3>
 
@@ -225,7 +226,7 @@ const applyPlan = () => {
           v-if="simulationResult"
           class="flex items-center gap-2 bg-white px-2 py-1.5 rounded border border-slate-200"
         >
-          <iconify-icon icon="mdi:clock-fast" class="text-indigo-500"></iconify-icon>
+          <BaseIcon icon="mdi:clock-fast" class="text-indigo-500" />
           <span class="text-xs text-slate-600">
             Logras la meta cada
             <span class="font-bold text-indigo-700">{{ simulationResult.interval }} meses</span>
@@ -239,8 +240,8 @@ const applyPlan = () => {
       @click="applyPlan"
       class="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2 text-sm"
     >
-      <iconify-icon icon="mdi:check-decagram"></iconify-icon>
+      <BaseIcon icon="mdi:check-decagram" />
       ¡Proceder con el Plan!
     </button>
-  </div>
+  </BaseCard>
 </template>
