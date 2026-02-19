@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { RouterView, useRoute } from 'vue-router';
-import AppSidebar from './components/AppSidebar.vue';
+import AppSidebar from '../components/AppSidebar.vue';
 
 const route = useRoute();
 const isMobile = ref(false);
