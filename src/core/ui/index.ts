@@ -3,4 +3,7 @@ export { default as BaseInput } from './BaseInput.vue';
 export { default as BaseIcon } from './BaseIcon.vue';
 export { default as BaseSwitch } from './BaseSwitch.vue';
 export { default as BaseTabs } from './BaseTabs.vue';
+export { default as BaseTab } from './BaseTab.vue';
+export { default as BaseTabsWindow } from './BaseTabsWindow.vue';
+export { default as BaseTabsWindowItem } from './BaseTabsWindowItem.vue';
 export { default as BaseTypography } from './BaseTypography.vue';

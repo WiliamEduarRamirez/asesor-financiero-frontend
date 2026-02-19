@@ -1,44 +1,74 @@
 <script setup lang="ts">
+import { computed, provide } from 'vue';
 import { cn } from './utils';
 import type { ClassValue } from 'clsx';
 
-export interface Tab {
-  value: string;
-  label: string;
-  icon?: string;
-}
-
-const props = defineProps<{
-  tabs: Tab[];
-  modelValue: string;
-  class?: ClassValue;
-}>();
+const props = withDefaults(
+  defineProps<{
+    modelValue: string | number;
+    class?: ClassValue;
+    align?: 'left' | 'center' | 'right';
+    variant?: 'pills' | 'underlined';
+    grow?: boolean;
+  }>(),
+  {
+    align: 'left',
+    variant: 'pills',
+    grow: false,
+  },
+);
 
 const emit = defineEmits<{
-  'update:modelValue': [value: string];
+  'update:modelValue': [value: string | number];
 }>();
+
+const alignClass = computed(() => {
+  switch (props.align) {
+    case 'center':
+      return 'justify-center';
+    case 'right':
+      return 'justify-end';
+    case 'left':
+    default:
+      return 'justify-start';
+  }
+});
+
+const wrapperClass = computed(() => {
+  if (props.variant === 'underlined') {
+    return cn(
+      'flex w-full overflow-x-auto border-b border-slate-200 scrollbar-hide',
+      alignClass.value,
+      props.class,
+    );
+  }
+  return cn('flex w-full overflow-x-auto scrollbar-hide', props.class);
+});
+
+const innerContainerClass = computed(() => {
+  if (props.variant === 'underlined') {
+    return cn('flex min-w-max', props.grow ? 'w-full' : 'w-auto');
+  }
+  return cn(
+    'inline-flex items-center rounded-lg bg-slate-100 p-1 min-w-max',
+    alignClass.value,
+    props.grow ? 'w-full flex-1' : 'w-auto',
+  );
+});
+
+// Proveemos el contexto a todos los BaseTab descendientes
+provide('tabsContext', {
+  activeValue: computed(() => props.modelValue),
+  variant: computed(() => props.variant),
+  grow: computed(() => props.grow),
+  updateValue: (val: string | number) => emit('update:modelValue', val),
+});
 </script>
 
 <template>
-  <div :class="cn('w-full overflow-x-auto', props.class)">
-    <div
-      class="inline-flex items-center justify-start rounded-md bg-muted p-1 text-muted-foreground min-w-max w-full sm:w-auto"
-    >
-      <button
-        v-for="tab in tabs"
-        :key="tab.value"
-        type="button"
-        @click="emit('update:modelValue', tab.value)"
-        :class="[
-          'inline-flex items-center justify-center whitespace-nowrap rounded-sm px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 flex-1 sm:flex-none',
-          modelValue === tab.value
-            ? 'bg-background text-foreground shadow-sm'
-            : 'hover:bg-background/50 hover:text-foreground',
-        ]"
-      >
-        <iconify-icon v-if="tab.icon" :icon="tab.icon" class="mr-2 text-lg"></iconify-icon>
-        {{ tab.label }}
-      </button>
+  <div :class="wrapperClass">
+    <div :class="innerContainerClass" role="tablist">
+      <slot />
     </div>
   </div>
 </template>

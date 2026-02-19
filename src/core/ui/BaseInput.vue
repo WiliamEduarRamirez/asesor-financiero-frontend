@@ -77,7 +77,8 @@ const updateValue = (event: Event) => {
     <label
       v-if="label"
       :for="id"
-      class="font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-slate-700 block mb-1.5"
+      :title="label"
+      class="font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-slate-700 block mb-1.5 truncate"
       :class="size === 'sm' ? 'text-xs' : 'text-sm'"
     >
       {{ label }}

@@ -15,7 +15,14 @@ import EquilibriumChart from './components/EquilibriumChart.vue';
 import PaymentProgression from './components/PaymentProgression.vue';
 import TermReductionPlan from './components/TermReductionPlan.vue';
 import DebtOptimization from './components/DebtOptimization.vue';
-import { BaseTabs, BaseTypography } from '@/core/ui';
+import {
+  BaseTabs,
+  BaseTab,
+  BaseTabsWindow,
+  BaseTabsWindowItem,
+  BaseTypography,
+  BaseIcon,
+} from '@/core/ui';
 import { useRates } from './composables/useRates';
 
 useRates(); // Initialize rates logic
@@ -100,18 +107,13 @@ const handleApplyPlan = (payload: { amount: number; interval: number }) => {
   aggressiveContinuity.value = true;
 };
 
-const tabs = [
-  { value: 'config', label: 'Resumen Inicial', icon: 'heroicons:document-text' },
-  { value: 'strategies', label: 'Estrategias de Pago', icon: 'heroicons:banknotes' },
-  { value: 'table', label: 'Análisis Detallado', icon: 'heroicons:table-cells' },
-];
 const activeTab = ref('config');
 </script>
 
 <template>
   <div class="space-y-6">
-    <div class="flex items-center justify-between mb-4">
-      <BaseTypography variant="h2" class="text-slate-800 tracking-tight"
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
+      <BaseTypography variant="h2" class="text-slate-800 tracking-tight text-2xl sm:text-3xl"
         >Hipoteca Inteligente</BaseTypography
       >
       <span
@@ -122,88 +124,98 @@ const activeTab = ref('config');
     </div>
 
     <!-- Tabs Navigation -->
-    <BaseTabs v-model="activeTab" :tabs="tabs" class="mb-4" />
+    <BaseTabs v-model="activeTab" class="mb-4">
+      <BaseTab value="config">
+        <BaseIcon icon="heroicons:document-text" class="mr-2 opacity-80" />
+        Resumen Inicial
+      </BaseTab>
+      <BaseTab value="strategies">
+        <BaseIcon icon="heroicons:banknotes" class="mr-2 opacity-80" />
+        Estrategias de Pago
+      </BaseTab>
+      <BaseTab value="table">
+        <BaseIcon icon="heroicons:table-cells" class="mr-2 opacity-80" />
+        Análisis Detallado
+      </BaseTab>
+    </BaseTabs>
 
-    <!-- Tab 1: Configuration -->
-    <div
-      v-if="activeTab === 'config'"
-      class="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
-    >
-      <div class="lg:col-span-5 space-y-6">
-        <LoanParameters :monthly-payment="monthlyPayment" />
-      </div>
-      <div class="lg:col-span-7 space-y-6">
-        <SimulatorKPIs
-          :monthly-payment="monthlyPayment"
-          :term-years="termYears"
-          :salary-percentage="salaryPercentage"
-          :risk-status="riskStatus"
-          :total-interest="totalInterest"
-          :first-month-breakdown="firstMonthBreakdown"
-          :has-refinancing-events="hasRefinancingEvents"
-        />
-        <PaymentDistributionChart :loan-amount="loanAmount" :total-interest="totalInterest" />
-      </div>
-    </div>
+    <!-- Tab Windows Content -->
+    <BaseTabsWindow v-model="activeTab">
+      <!-- Tab 1: Configuration -->
+      <BaseTabsWindowItem value="config" class="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8">
+        <div class="lg:col-span-5 xl:col-span-4 space-y-6">
+          <LoanParameters :monthly-payment="monthlyPayment" />
+        </div>
+        <div class="lg:col-span-7 xl:col-span-8 space-y-6">
+          <SimulatorKPIs
+            :monthly-payment="monthlyPayment"
+            :term-years="termYears"
+            :salary-percentage="salaryPercentage"
+            :risk-status="riskStatus"
+            :total-interest="totalInterest"
+            :first-month-breakdown="firstMonthBreakdown"
+            :has-refinancing-events="hasRefinancingEvents"
+          />
+          <PaymentDistributionChart :loan-amount="loanAmount" :total-interest="totalInterest" />
+        </div>
+      </BaseTabsWindowItem>
 
-    <!-- Tab 2: Strategies -->
-    <div
-      v-if="activeTab === 'strategies'"
-      class="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
-    >
-      <div class="lg:col-span-5 space-y-6">
-        <PrepaymentStrategy
-          v-model:prepayments="prepayments"
-          v-model:prepaymentStrategy="prepaymentStrategy"
-          :total-interest-savings="totalInterestSavings"
-          :months-saved="monthsSaved"
-          :salary-percentage="salaryPercentage"
-          :min-salary-percentage="minSalaryPercentage"
-          :term-years="termYears"
-          :validate-prepayment="validatePrepayment"
-          :compare-strategies="compareStrategies"
-          v-model:stop-on-crossover="stopOnCrossover"
-          v-model:aggressive-continuity="aggressiveContinuity"
-          :calculate-optimal-prepayment="calculateOptimalPrepayment"
-          :pivot-month="pivotMonth"
-          :maintenance-amount="maintenanceAmount"
-          @add-prepayment="addPrepayment"
-          @add-recurring-prepayment="addRecurringPrepayment"
-          @remove-prepayment="removePrepayment"
-        />
+      <!-- Tab 2: Strategies -->
+      <BaseTabsWindowItem
+        value="strategies"
+        class="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8"
+      >
+        <div class="lg:col-span-5 xl:col-span-4 space-y-6">
+          <PrepaymentStrategy
+            v-model:prepayments="prepayments"
+            v-model:prepaymentStrategy="prepaymentStrategy"
+            :total-interest-savings="totalInterestSavings"
+            :months-saved="monthsSaved"
+            :salary-percentage="salaryPercentage"
+            :min-salary-percentage="minSalaryPercentage"
+            :term-years="termYears"
+            :validate-prepayment="validatePrepayment"
+            :compare-strategies="compareStrategies"
+            v-model:stop-on-crossover="stopOnCrossover"
+            v-model:aggressive-continuity="aggressiveContinuity"
+            :calculate-optimal-prepayment="calculateOptimalPrepayment"
+            :pivot-month="pivotMonth"
+            :maintenance-amount="maintenanceAmount"
+            @add-prepayment="addPrepayment"
+            @add-recurring-prepayment="addRecurringPrepayment"
+            @remove-prepayment="removePrepayment"
+          />
 
-        <TermReductionPlan
-          :monthly-salary="monthlySalary"
-          :monthly-payment="monthlyPayment || 0"
-          @apply-plan="handleApplyPlan"
-        />
+          <TermReductionPlan
+            :monthly-salary="monthlySalary"
+            :monthly-payment="monthlyPayment || 0"
+            @apply-plan="handleApplyPlan"
+          />
 
-        <DebtOptimization
-          :refinancing-events="refinancingEvents || []"
-          @add-event="addRefinancingEvent"
-          @remove-event="removeRefinancingEvent"
-          @update-event="updateRefinancingEvent"
-        />
-      </div>
-      <div class="lg:col-span-7 space-y-6">
-        <StrategyImpactCard :summary="globalStrategySummary" :term-years="termYears" />
-        <PaymentProgression
-          :refinancing-events="refinancingEvents"
-          :initial-monthly-payment="monthlyPayment"
-          :initial-rate="annualRate"
-          :term-months="termYears * 12"
-          :amortization-schedule="amortizationSchedule"
-        />
-      </div>
-    </div>
+          <DebtOptimization
+            :refinancing-events="refinancingEvents || []"
+            @add-event="addRefinancingEvent"
+            @remove-event="removeRefinancingEvent"
+            @update-event="updateRefinancingEvent"
+          />
+        </div>
+        <div class="lg:col-span-7 xl:col-span-8 space-y-6">
+          <StrategyImpactCard :summary="globalStrategySummary" :term-years="termYears" />
+          <PaymentProgression
+            :refinancing-events="refinancingEvents"
+            :initial-monthly-payment="monthlyPayment"
+            :initial-rate="annualRate"
+            :term-months="termYears * 12"
+            :amortization-schedule="amortizationSchedule"
+          />
+        </div>
+      </BaseTabsWindowItem>
 
-    <!-- Tab 3: Detailed Analysis -->
-    <div
-      v-if="activeTab === 'table'"
-      class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
-    >
-      <EquilibriumChart :schedule="amortizationSchedule" :monthly-salary="monthlySalary" />
-      <AmortizationTable :schedule="amortizationSchedule" />
-    </div>
+      <!-- Tab 3: Detailed Analysis -->
+      <BaseTabsWindowItem value="table" class="space-y-8">
+        <EquilibriumChart :schedule="amortizationSchedule" :monthly-salary="monthlySalary" />
+        <AmortizationTable :schedule="amortizationSchedule" />
+      </BaseTabsWindowItem>
+    </BaseTabsWindow>
   </div>
 </template>
