@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRates } from '../composables/useRates';
-import { BaseInput, BaseSwitch, BaseIcon } from '@/core/ui';
+import { BaseInput, BaseSwitch, BaseIcon, BaseTypography } from '@/core/ui';
 
 const { isTceaMode, teaValue, tceaValue, desgravamenValue, fireInsuranceValue } = useRates();
 </script>
@@ -9,9 +9,7 @@ const { isTceaMode, teaValue, tceaValue, desgravamenValue, fireInsuranceValue } 
   <div class="space-y-4 pt-2 border-t border-slate-100 mt-4">
     <!-- Header with Switch -->
     <div class="flex items-center justify-between">
-      <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">
-        Configuración de Tasas
-      </h4>
+      <BaseTypography variant="overline" color="muted"> Configuración de Tasas </BaseTypography>
       <BaseSwitch v-model="isTceaMode" label="Usar TCEA" class="ml-2" />
     </div>
 
@@ -75,10 +73,10 @@ const { isTceaMode, teaValue, tceaValue, desgravamenValue, fireInsuranceValue } 
             placeholder="9.5"
             class="bg-indigo-50 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500 text-indigo-900 font-bold"
           />
-          <p class="text-xs text-indigo-500 mt-1 flex items-center gap-1">
+          <BaseTypography variant="caption" color="primary" class="mt-1 flex items-center gap-1">
             <BaseIcon icon="mdi:information-outline" />
             Incluye todos los costos y seguros
-          </p>
+          </BaseTypography>
         </div>
       </div>
     </Transition>

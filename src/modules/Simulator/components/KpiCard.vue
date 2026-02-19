@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BaseCard, BaseIcon } from '@/core/ui';
+import { BaseCard, BaseIcon, BaseTypography } from '@/core/ui';
 defineProps<{
   title: string;
   value: string;
@@ -22,18 +22,22 @@ defineProps<{
     </div>
 
     <div class="relative z-10">
-      <p class="text-sm font-medium text-slate-500 relative inline-flex items-center gap-2">
+      <BaseTypography
+        variant="subtitle2"
+        color="muted"
+        class="relative inline-flex items-center gap-2"
+      >
         {{ title }}
         <slot name="badge"></slot>
-      </p>
+      </BaseTypography>
 
-      <p class="text-2xl font-bold text-slate-900 mt-1">
-        {{ value }}
-      </p>
+      <BaseTypography variant="h4" color="default" class="mt-1">
+        <slot name="value">{{ value }}</slot>
+      </BaseTypography>
 
       <div v-if="$slots.footer || subtext" class="mt-2">
         <slot name="footer">
-          <p class="text-xs text-slate-400">{{ subtext }}</p>
+          <BaseTypography variant="caption" color="muted">{{ subtext }}</BaseTypography>
         </slot>
       </div>
     </div>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useLoanParameters } from '../composables/useLoanParameters';
 import LoanRateConfig from './LoanRateConfig.vue';
-import { BaseCard, BaseInput, BaseIcon } from '@/core/ui';
+import { BaseCard, BaseInput, BaseIcon, BaseTypography } from '@/core/ui';
 
 const { price, downPayment, termYears, monthlySalary, downPaymentPercentage } = useLoanParameters();
 
@@ -12,10 +12,10 @@ defineProps<{
 
 <template>
   <BaseCard>
-    <h3 class="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
+    <BaseTypography variant="h5" color="default" class="mb-4 flex items-center gap-2">
       <BaseIcon icon="mdi:form-select" class="text-blue-600" />
       Parámetros del Préstamo
-    </h3>
+    </BaseTypography>
 
     <div class="space-y-5">
       <!-- Property Price -->
@@ -37,7 +37,9 @@ defineProps<{
           label="Cuota Inicial (S/)"
           prefix="S/"
         />
-        <p class="text-xs text-slate-400 mt-1 text-right">{{ downPaymentPercentage }}% del valor</p>
+        <BaseTypography variant="caption" color="muted" class="mt-1 text-right"
+          >{{ downPaymentPercentage }}% del valor</BaseTypography
+        >
       </div>
 
       <!-- Term (Plazo) -->

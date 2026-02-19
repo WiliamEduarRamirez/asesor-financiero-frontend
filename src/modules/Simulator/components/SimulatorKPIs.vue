@@ -74,9 +74,7 @@ const formatCurrency = (value: number) => {
       :icon-class="riskStatus.colorClass"
     >
       <template #value>
-        <p class="text-2xl font-bold mt-1" :class="riskStatus.colorClass">
-          {{ salaryPercentage.toFixed(1) }}%
-        </p>
+        <span :class="riskStatus.colorClass">{{ salaryPercentage.toFixed(1) }}%</span>
       </template>
       <template #footer>
         <div

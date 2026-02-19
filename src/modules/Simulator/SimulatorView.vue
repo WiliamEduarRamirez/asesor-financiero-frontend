@@ -15,7 +15,7 @@ import EquilibriumChart from './components/EquilibriumChart.vue';
 import PaymentProgression from './components/PaymentProgression.vue';
 import TermReductionPlan from './components/TermReductionPlan.vue';
 import DebtOptimization from './components/DebtOptimization.vue';
-import { BaseTabs } from '@/core/ui';
+import { BaseTabs, BaseTypography } from '@/core/ui';
 import { useRates } from './composables/useRates';
 
 useRates(); // Initialize rates logic
@@ -111,7 +111,9 @@ const activeTab = ref('config');
 <template>
   <div class="space-y-6">
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-3xl font-bold text-slate-800 tracking-tight">Hipoteca Inteligente</h2>
+      <BaseTypography variant="h2" class="text-slate-800 tracking-tight"
+        >Hipoteca Inteligente</BaseTypography
+      >
       <span
         class="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200"
       >
